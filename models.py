@@ -1,29 +1,20 @@
-
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text
+from sqlalchemy import create_engine, Column, Integer, DateTime, String, Boolean, Text
 from database import Base
+from datetime import datetime
 
-# Database Model
+class BaseModel():
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
 class RSVP(Base):
     __tablename__ = "rsvps"
+
     id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String, index=True, description= Column(String))
-    last_name = Column(String, index=True, description= Column(String))
-    email = Column(String, index=True, description= Column(String))
-    address = Column(String, index=True, description= Column(String))
-    is_attending = Column(Boolean, index=True, description= Column(Boolean))
-    dietary_restrictions = Column(String, index=True, description= Column(String))
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    address = Column(String, nullable=True)
+    is_attending = Column(Boolean, default=False)
+    dietary_restrictions = Column(String, nullable=True)
     message = Column(Text, index=True, default="")
-
-
-
-class RSVPRequest:
-    def __init__(self, first_name, last_name, email, address, is_attending, dietary_restrictions, message):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.address = address
-        self.is_attending = is_attending
-        self.dietary_restrictions = dietary_restrictions
-        self.message = message
-
 

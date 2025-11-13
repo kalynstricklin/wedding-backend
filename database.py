@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
 # Database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./wedding.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./wedding.db" #todo put in env variable
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -16,3 +16,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Initialize database
+def init_db():
+    Base.metadata.create_all(bind=engine)
