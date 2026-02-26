@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import Base, engine, init_db, get_db
 from models import RSVP
@@ -10,6 +11,15 @@ from schemas import RSVPResponse, RSVPCreate
 init_db()
 
 app = FastAPI()
+
+# CORS middleware to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*", "kalynandjack.love"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 

@@ -15,6 +15,4 @@ class RSVP(Base):
     email = Column(String, nullable=False)
     address = Column(String, nullable=True)
     is_attending = Column(Boolean, default=False)
-    dietary_restrictions = Column(String, nullable=True)
-    message = Column(Text, index=True, default="")
 
