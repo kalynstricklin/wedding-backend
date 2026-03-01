@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import Base, engine, init_db, get_db
@@ -25,7 +25,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return { "message": "Welcome to our wedding website API :P" }
+    return { "message": "Welcome to our wedding website API where we are tracking guest rsvps" }
 
 # Add a rsvp
 @app.post("/rsvp", response_model=RSVPResponse)
@@ -42,5 +42,29 @@ async def list_rsvp(db: Session = Depends(get_db)):
     rsvps = db.query(RSVP).all()
     return rsvps
 
+# Lookup guest by name
+@app.get("/rsvp/lookup", response_model=RSVPResponse)
+def lookup_guest(first_name: str, last_name: str, db: Session = Depends(get_db)):
+    guest = db.query(RSVP).filter(
+        RSVP.first_name.ilike(first_name),
+        RSVP.last_name.ilike(last_name)
+    ).first()
+    if not guest:
+        raise HTTPException(status_code=404, detail="Guest not found")
+    return guest
+
+# Update guest RSVP
+@app.put("/rsvp/{guest_id}", response_model=RSVPResponse)
+def update_rsvp(guest_id: int, rsvp: RSVPCreate, db: Session = Depends(get_db)):
+    guest = db.query(RSVP).filter(RSVP.id == guest_id).first()
+    if not guest:
+        raise HTTPException(status_code=404, detail="Guest not found")
+    guest.email = rsvp.email
+    guest.address = rsvp.address
+    guest.is_attending = rsvp.is_attending
+    db.commit()
+    db.refresh(guest)
+    return guest
 
 # can return guests that are attending by filtering by is_attending boolean
+
