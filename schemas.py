@@ -18,4 +18,4 @@ class RSVPResponse(RSVPBase):
     id: int
 
     class Config:
-        from_attr = True
+        from_attributes = True
