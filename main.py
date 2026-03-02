@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
+from typing import List, Optional
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import Base, engine, init_db, get_db
@@ -38,9 +38,14 @@ def submit_rsvp(rsvp: RSVPCreate, db: Session = Depends(get_db)):
 
 # Get all rsvps
 @app.get("/rsvp", response_model=List[RSVPResponse])
-async def list_rsvp(db: Session = Depends(get_db)):
-    rsvps = db.query(RSVP).all()
-    return rsvps
+async def list_rsvp(
+    is_attending: Optional[bool] = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(RSVP)
+    if is_attending is not None:
+        query = query.filter(RSVP.is_attending == is_attending)
+    return query.all()
 
 # Lookup guest by name
 @app.get("/rsvp/lookup", response_model=RSVPResponse)
@@ -66,8 +71,3 @@ def update_rsvp(guest_id: int, rsvp: RSVPCreate, db: Session = Depends(get_db)):
     db.refresh(guest)
     return guest
 
-# can return guests that are attending by filtering by is_attending boolean
-
-@app.get("/rsvp/attending", response_model=List[RSVPResponse])
-def list_attending(db: Session = Depends(get_db)):
-    return db.query(RSVP).filter(RSVP.is_attending == True).all()
