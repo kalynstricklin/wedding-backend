@@ -62,6 +62,8 @@ guests = [
     {"first_name": "Salem", "last_name": ""},
     {"first_name": "Shelley", "last_name": "Moore"},
     {"first_name": "Shaina", "last_name": "Doser"},
+    {"first_name": "Katelyn", "last_name": "Farnsworth"},
+    {"first_name": "Alisa", "last_name": "Jordan"},
 ]
 
 db = SessionLocal()

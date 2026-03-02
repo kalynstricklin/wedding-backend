@@ -68,3 +68,6 @@ def update_rsvp(guest_id: int, rsvp: RSVPCreate, db: Session = Depends(get_db)):
 
 # can return guests that are attending by filtering by is_attending boolean
 
+@app.get("/rsvp/attending", response_model=List[RSVPResponse])
+def list_attending(db: Session = Depends(get_db)):
+    return db.query(RSVP).filter(RSVP.is_attending == True).all()
