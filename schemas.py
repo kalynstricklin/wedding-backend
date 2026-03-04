@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -6,8 +6,8 @@ class RSVPBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     address: Optional[str] = Field(None, max_length=500)
-    email: EmailStr
-    is_attending: bool
+    email: Optional[str] = Field(None, max_length=255)
+    is_attending: Optional[bool] = None
 
 
 
