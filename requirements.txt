@@ -3,3 +3,6 @@ requests
 uvicorn
 sqlalchemy
 pydantic
+slowapi
+email-validator
+python-dotenv
