@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Query, Security, Request
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Query, Security, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
@@ -14,15 +14,6 @@ from models import RSVP
 from schemas import RSVPResponse, RSVPCreate
 
 load_dotenv()
-
-# API Key for admin endpoints
-# API_KEY = os.getenv("API_KEY", "change-me-in-production")
-# api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-# def verify_api_key(api_key: str = Security(api_key_header)):
-#     if api_key != API_KEY:
-#         raise HTTPException(status_code=403, detail="Invalid API key")
-#     return api_key
 
 API_KEY = os.getenv("API_KEY")
 API_KEY_NAME = "X-API-Key"
@@ -54,7 +45,7 @@ app.state.limiter = limiter
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(status_code=429, content={"detail": "Too many requests"})
 
-# CORS middleware to allow frontend requests
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://kalynandjack.love", "https://www.kalynandjack.love"],
@@ -64,12 +55,11 @@ app.add_middleware(
 )
 
 
-
 @app.get("/")
 async def root():
     return { "message": "Wedding API" }
 
-# Add a rsvp (rate limited to prevent spam)
+# Add a rsvp
 @app.post("/rsvp", response_model=RSVPResponse)
 @limiter.limit("10/minute")
 def submit_rsvp(request: Request, rsvp: RSVPCreate, db: Session = Depends(get_db)):
@@ -79,7 +69,7 @@ def submit_rsvp(request: Request, rsvp: RSVPCreate, db: Session = Depends(get_db
     db.refresh(new_rsvp)
     return new_rsvp
 
-# Get all rsvps (requires API key - admin only)
+# Get all rsvps
 @app.get("/rsvp", response_model=List[RSVPResponse], dependencies=[Depends(get_api_key)])
 async def list_rsvp(
     is_attending: Optional[bool] = Query(default=None),
@@ -90,7 +80,7 @@ async def list_rsvp(
         query = query.filter(RSVP.is_attending == is_attending)
     return query.all()
 
-# Lookup guest by name (rate limited to prevent enumeration)
+# Lookup guest by name
 @app.get("/rsvp/lookup", response_model=RSVPResponse)
 @limiter.limit("20/minute")
 def lookup_guest(request: Request, first_name: str, last_name: str, db: Session = Depends(get_db)):
@@ -102,7 +92,7 @@ def lookup_guest(request: Request, first_name: str, last_name: str, db: Session 
         raise HTTPException(status_code=404, detail="Guest not found")
     return guest
 
-# Update guest RSVP (rate limited)
+# Update guest RSVP
 @app.put("/rsvp/{guest_id}", response_model=RSVPResponse)
 @limiter.limit("10/minute")
 def update_rsvp(request: Request, guest_id: int, rsvp: RSVPCreate, db: Session = Depends(get_db)):
@@ -116,3 +106,12 @@ def update_rsvp(request: Request, guest_id: int, rsvp: RSVPCreate, db: Session =
     db.refresh(guest)
     return guest
 
+# Delete guest RSVP
+@app.delete("/rsvp/{guest_id}", dependencies=[Depends(get_api_key)])
+def delete_rsvp(guest_id: int, db: Session = Depends(get_db)):
+    guest = db.query(RSVP).filter(RSVP.id == guest_id).first()
+    if not guest:
+        raise HTTPException(status_code=404, detail="Guest not found")
+    db.delete(guest)
+    db.commit()
+    return {"message": "Guest deleted"}
