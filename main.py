@@ -16,12 +16,28 @@ from schemas import RSVPResponse, RSVPCreate
 load_dotenv()
 
 # API Key for admin endpoints
-API_KEY = os.getenv("API_KEY", "change-me-in-production")
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+# API_KEY = os.getenv("API_KEY", "change-me-in-production")
+# api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-def verify_api_key(api_key: str = Security(api_key_header)):
+# def verify_api_key(api_key: str = Security(api_key_header)):
+#     if api_key != API_KEY:
+#         raise HTTPException(status_code=403, detail="Invalid API key")
+#     return api_key
+
+API_KEY = os.getenv("API_KEY")
+API_KEY_NAME = "X-API-Key"
+
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key: Optional[str] = Security(api_key_header)) -> str:
+    """
+    Validates the API key provided in the header.
+    """
     if api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key. Check that you are passing a 'X-API-Key' in your header."
+        )
     return api_key
 
 # Rate limiting
@@ -64,11 +80,10 @@ def submit_rsvp(request: Request, rsvp: RSVPCreate, db: Session = Depends(get_db
     return new_rsvp
 
 # Get all rsvps (requires API key - admin only)
-@app.get("/rsvp", response_model=List[RSVPResponse])
+@app.get("/rsvp", response_model=List[RSVPResponse], dependencies=[Depends(get_api_key)])
 async def list_rsvp(
     is_attending: Optional[bool] = Query(default=None),
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
 ):
     query = db.query(RSVP)
     if is_attending is not None:
